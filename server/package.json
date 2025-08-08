@@ -15,10 +15,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
+    "dotenv": "^17.2.1",
     "express": "^4.17.1",
     "express-rate-limit": "^8.0.1",
     "http-error": "^0.0.6",
+    "mongoose": "^8.17.0",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
