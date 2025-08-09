@@ -1,5 +1,9 @@
-const createError = require('http-errors');
+const createError = require('http-error');
+const fs = require('fs');
+
 const User = require("../models/userModel");
+const { findwithId } = require("../services/finditem");
+const { successResponse } = require("./responseController");
 
 const getUsers = async(req, res, next) => {
     try {
@@ -30,19 +34,70 @@ const getUsers = async(req, res, next) => {
             throw createError(404, "No users found");
         }
 
-        res.status(200).json({
-            message: "Users were returned",
-            users,
-            pagination: {
-                totalPages: Math.ceil(count / limit),
-                currentPage: page,
-                previousPage: page > 1 ? page - 1 : null,
-                nextPage: page < Math.ceil(count / limit) ? page + 1 : null,
+        return successResponse(res, {
+            statusCode: 200,
+            message: 'Users were returned successfully',
+            payload: {
+                users,
+                pagination: {
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: page,
+                    previousPage: page > 1 ? page - 1 : null,
+                    nextPage: page < Math.ceil(count / limit) ? page + 1 : null,
+                },
             },
         });
+
     } catch (error) {
         next(error);
     }
 };
 
-module.exports = { getUsers };
+
+const getUser = async(req, res, next) => {
+    try {
+        const id = req.params.id;
+        const options = { password: 0 };
+        const user = await findwithId(id, options);
+        return successResponse(res, {
+            statusCode: 200,
+            message: 'User was returned successfully',
+            payload: { user },
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+const deleteUser = async(req, res, next) => {
+    try {
+        const id = req.params.id;
+        const options = { password: 0 };
+        const user = await findwithId(id, options);
+
+        const userImagePath = user.image;
+        fs.access(userImagePath, (err) => {
+            if (err) {
+                console.erroe('user image does not exist')
+            } else {
+                fs.unlink(userImagePath, (err) => {
+                    if (err) throw err;
+                    console.log('user image was deleted')
+
+                })
+            }
+        })
+        await User.findByIdAndDelete({
+            _id: id,
+            isAdmin: false
+        })
+
+        return successResponse(res, {
+            statusCode: 200,
+            message: 'User was deleted successfully',
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+module.exports = { getUsers, getUser, deleteUser };
