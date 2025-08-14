@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const deleteImage = async (userImangePath) => {
 
     try {
-      await fs.access(userImangePath);
+      await fs.access(userImagePath);
       await fs.unlink(userImagePath)
       console.log('user image was deleted');
     } catch (error) {

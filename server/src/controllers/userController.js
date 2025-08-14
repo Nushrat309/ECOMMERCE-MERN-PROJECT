@@ -1,10 +1,10 @@
-const createError = require('http-error');
+const createError = require('http-errors');
 const fs = require('fs').promises;
 
 const User = require("../models/userModel");
 const { findwithId } = require("../services/finditem");
 const { successResponse } = require("./responseController");
-const { deleteImage } = require('../helper/deleteImage');
+const { deleteImage } = require('../helper/deleteImagee');
 
 const getUsers = async(req, res, next) => {
     try {
@@ -68,7 +68,8 @@ const getUserById = async(req, res, next) => {
     } catch (error) {
         next(error);
     }
-}
+};
+
 const deleteUserById = async(req, res, next) => {
     try {
         const id = req.params.id;
@@ -92,6 +93,32 @@ const deleteUserById = async(req, res, next) => {
     } catch (error) {
         next(error);
     }
-}
+};
 
-module.exports = { getUsers, getUserById, deleteUserById };
+const processRegister = async (req,res,next) =>{
+    try{
+        const {name,email,password,phone,address} = req.body;
+
+        const userExists = await User.exists({email:email});
+        if(userExists){
+            throw createError(409,'User with this email already exist.Please sign in');
+        }
+
+        const newUser = {
+            name,
+            email,
+            password,
+            phone,
+            address,
+        }
+        return successResponse(res,{
+            statusCode:200,
+            message: 'user was created successfully',
+            payload: { newUser },
+        });
+    }catch (error){
+        next(error);
+    }
+};
+
+module.exports = { getUsers, getUserById, deleteUserById,processRegister };
