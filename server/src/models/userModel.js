@@ -1,5 +1,5 @@
 const { Schema, model } = require('mongoose');
-const bcrypt = require('bcrypt'); // fixed typo: 'bycrypt' ➝ 'bcrypt'
+const bcrypt = require('bcryptjs'); // fixed typo: 'bycrypt' ➝ 'bcrypt'
 
 const { defaultImagePath } = require("../secret");
 
