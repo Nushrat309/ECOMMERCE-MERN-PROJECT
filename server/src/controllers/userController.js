@@ -1,5 +1,5 @@
 const createError = require('http-errors');
-const fs = require('fs').promises;
+const jwt = require('jsonwebtoken');
 
 const User = require("../models/userModel");
 const { findwithId } = require("../services/finditem");
@@ -141,4 +141,37 @@ const processRegister = async (req,res,next) =>{
     }
 };
 
-module.exports = { getUsers, getUserById, deleteUserById,processRegister };
+const activateUserAccount = async (req,res,next) =>{
+    try{
+        const token = req.query.token;
+        if(!token) throw createError(404,'token not found');
+        
+        const decode = jwt.verify(token, jwtActivationKey);
+        if(!decode) throw createError(401,'Unable to verify user');
+
+        const userExists = await User.exists({email:decode.email});
+        if(userExists){
+            throw createError(409,'User with this email already exist.Please sign in');
+        }
+
+        await User.create(decode);
+       
+        return successResponse(res,{
+            statusCode:201,
+            message: "user was registered successfully",
+        });
+
+    } catch(error){
+        if (error.name == 'TokenExpiredError'){
+            return next(createError(401, 'Token has expired'));
+        } else if (error.name == 'JsonWebTokenError'){
+            return next(createError(401, 'Invalid Token'));
+        } else {
+            return next(error);
+        }
+    }
+};
+
+
+
+module.exports = { getUsers, getUserById, deleteUserById,processRegister, activateUserAccount};
