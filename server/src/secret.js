@@ -12,4 +12,6 @@ const smtpPassword = process.env.SMTP_PASSWORD || '';
 
 const clientURL = process.env.CLIENT_URL || '';
 
-module.exports = { serverPort, mongodbURL, defaultImagePath, jwtActivationKey, smtpUsername, smtpPassword, clientURL};
+const uploadDir = process.env.UPLOAD_FILE || 'public/images/users';
+
+module.exports = { serverPort, mongodbURL, defaultImagePath, jwtActivationKey, smtpUsername, smtpPassword, clientURL, uploadDir};
