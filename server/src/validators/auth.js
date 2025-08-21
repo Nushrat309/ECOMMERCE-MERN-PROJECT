@@ -8,13 +8,6 @@ const validateUserRegistration = [
     .isLength({ min: 3, max: 31})
     .withMessage('Name should be at least 3-31 charecters long'),
 
-  body('email')
-    .trim()
-    .notEmpty()
-    .withMessage('Email is required.Enter your email address')
-    .isEmail()
-    .withMessage('Invalid email address'),
-
   body('password')
     .trim()
     .notEmpty()
@@ -36,14 +29,15 @@ const validateUserRegistration = [
     .notEmpty()
     .withMessage('Phone is required.Enter your phone number'),
     
-  body('image')
-    .custom((value,{ req }) => {
-        if(!req.file || !req.file.buffer) {
-            throw new Error('User image is required');
-        }
-        return true;
-    })
-    .withMessage('User image is required'),
+  body('image').optional().isString().withMessage('User image is optional'),
+];
+const validateUserLogin = [
+    body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required.Enter your email address')
+    .isEmail()
+    .withMessage('Invalid email address'),
 ];
 
 //sign in validation

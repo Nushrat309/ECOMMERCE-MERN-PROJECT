@@ -105,13 +105,11 @@ const processRegister = async (req,res,next) =>{
     try{
         const {name,email,password,phone,address} = req.body;
         
-        const image = req.file;
-        if(!image){
-            throw createError(400, 'Image file is required');
-        }
-        if(image.size > 1024 * 1024 * 2){
+        const image = req.file.path;
+        if(image && image.size > 1024 * 1024 * 2){
             throw createError(400, 'File too large.It must be less than 2 MB');
         }
+        
 
         const imageBufferString = image.buffer.toString('base64');
 
@@ -119,10 +117,15 @@ const processRegister = async (req,res,next) =>{
         if(userExists){
             throw createError(409,'User with this email already exist.Please sign in');
         }
+    
+    const tokenPayload = {name, email, password, phone, address}; 
 
+    if(image){
+        tokenPayload.image = image;
+    }
     const token = createJSONWebToken(
-        { name, email, password, phone, address, image:imageBufferString },
-         jwtActivationKey,
+        tokenPayload,
+        jwtActivationKey,
         '10m'
     );
 
@@ -134,15 +137,10 @@ const processRegister = async (req,res,next) =>{
         <h2> Hellow ${name} ! </h2>
         <p> Please click here to <a href="${clientURL}/api/users/activate/${token}" target="_blank"> activate your account </a> </p>
         `
-    }
+    };
 
     // send email with nodemailer
-    try{
-      await emailWithNodeMailer(emailData);
-    } catch(emailError){
-      next(createError(500,'Failed to send verification email'));
-      return;
-    }
+    sendEmail(emailData);
 
     return successResponse(res,{
         statusCode:200,
@@ -208,7 +206,8 @@ const updateUserById = async(req, res, next) => {
           if(image.size > 1024 * 1024 * 2){
             throw createError(400, 'File too large.It must be less than 2 MB');
           }
-          updates.image = image.buffer.toString('base64');
+          updates.image = image;
+          user.image !== 'defailt.png' && deleteImage(user.image);
         }
 
         const updatedUser = await User.findByIdAndUpdate(userId, updates, updateOptions).select("-password");
