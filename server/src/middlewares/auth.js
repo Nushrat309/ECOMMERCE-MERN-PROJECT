@@ -12,7 +12,7 @@ const isLoggedIn = async (req, res, next) => {
         if(!decode){
             throw createError(401,'Invalid access token.Please login again');
         }
-        req.body.userId = decoded._id;
+        req.user = decode.user;
         next();
     } catch (error) {
         return next(error);
@@ -38,4 +38,16 @@ const isLoggedOut = async (req, res, next) => {
     }
 };
 
-module.exports = { isLoggedIn, isLoggedOut };
+const isAdmin = async (req, res, next) => {
+    try {
+      console.log(req.user.isAdmin);
+      if(!req.user.isAdmin){
+        throw createError(403, 'Forbidden.You must be an admin to access this resources');
+      }
+      next();
+    } catch (error) {
+      return next(error);
+    }
+};
+
+module.exports = { isLoggedIn, isLoggedOut, isAdmin };

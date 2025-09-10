@@ -31,9 +31,9 @@ const handleLogin = async (req, res,next) => {
         // token, cookie
         // create jwt
         const accessToken = createJSONWebToken(
-            { _id: user._id },
+            { user },
             jwtAccessKey,
-            '10m',
+            '15m',
         );
         res.cookie('accessToken', accessToken,{
             maxAge: 15 * 60 * 1000, //15 minutes
@@ -41,11 +41,13 @@ const handleLogin = async (req, res,next) => {
             secure: true,
             sameSite: 'none'
         });
+
+        const userWithoutPassword = await User.findOne({email}).select('-password');
         // success response 
            return successResponse(res, {
             statusCode: 200,
-            message: 'Users loggedin successfully',
-            payload: {},
+            message: 'Users logged in successfully',
+            payload: {userWithoutPassword},
         });
 
     } catch (error) {

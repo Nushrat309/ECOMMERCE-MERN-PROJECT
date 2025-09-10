@@ -10,6 +10,7 @@ const { jwtActivationKey, clientURL } = require('../secret');
 const emailWithNodeMailer = require('../helper/email');
 const { runValidation } = require('../validators');
 const { options } = require('../routers/userRouter');
+const { handleUserAction } = require('../services/userService');
 
 
 const getUsers = async(req, res, next) => {
@@ -80,12 +81,7 @@ const deleteUserById = async(req, res, next) => {
     try {
         const id = req.params.id;
         const options = { password: 0 };
-        const user = await findwithId(User,id, options);
-
-        const userImagePath = user.image;
-
-        deleteImage(userImagePath);
-
+        const user = await findwithId(User, id, options);
 
         await User.findByIdAndDelete({
             _id: id,
@@ -226,6 +222,46 @@ const updateUserById = async(req, res, next) => {
     }
 };
 
+const handleManageUserStatusUserById = async(req, res, next) => {
+    try {
+        const userId = req.params.id;
+        const action = req.body.action;
+        
+        const successMessage = await handleUserAction(action, userId);
+       
+       return successResponse(res, {
+        statusCode: 200,
+        message: successMessage,
+       });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const handleGetUsers = async (req, res, next) => {
+  try {
+    const search = req.query.search || ''; 
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+
+    const {users,pagination} = await findUsers(search, limit, page);
+    const count = users.length;
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'users were returned successfully',
+      payload: {
+        users: users,
+        pagination: pagination,
+      },
+    });
+  } catch (error) {
+    next(error); 
+  }
+};
 
 
-module.exports = { getUsers, getUserById, deleteUserById,processRegister, activateUserAccount,updateUserById};
+
+
+
+module.exports = { getUsers, getUserById, deleteUserById,processRegister, activateUserAccount,updateUserById,handleManageUserStatusUserById,handleGetUsers};

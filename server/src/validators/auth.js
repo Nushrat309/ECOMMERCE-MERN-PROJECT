@@ -8,6 +8,13 @@ const validateUserRegistration = [
     .isLength({ min: 3, max: 31})
     .withMessage('Name should be at least 3-31 charecters long'),
 
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required.Enter your email address')
+    .isEmail()
+    .withMessage('Invalid email address'),
+
   body('password')
     .trim()
     .notEmpty()
@@ -31,13 +38,25 @@ const validateUserRegistration = [
     
   body('image').optional().isString().withMessage('User image is optional'),
 ];
+
 const validateUserLogin = [
-    body('email')
+
+   body('email')
     .trim()
     .notEmpty()
     .withMessage('Email is required.Enter your email address')
     .isEmail()
     .withMessage('Invalid email address'),
+  
+  body('password')
+    .trim()
+    .notEmpty()
+    .withMessage('Password is required.Enter your password')
+    .isLength({ min: 6})
+    .withMessage('Password should be at least 6 charecters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/)
+    .withMessage('Password must contain uppercase, lowercase, number, and special character'),
+
 ];
 
 //sign in validation
@@ -45,4 +64,5 @@ const validateUserLogin = [
 
 
 
-module.exports = { validateUserRegistration };
+
+module.exports = { validateUserRegistration, validateUserLogin };
