@@ -1,5 +1,6 @@
 const createError = require('http-errors');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const User = require("../models/userModel");
 const { findwithId } = require("../services/finditem");
@@ -11,6 +12,7 @@ const emailWithNodeMailer = require('../helper/email');
 const { runValidation } = require('../validators');
 const { options } = require('../routers/userRouter');
 const { handleUserAction } = require('../services/userService');
+const { isAdmin } = require('../middlewares/auth');
 
 
 const getUsers = async(req, res, next) => {
@@ -244,7 +246,7 @@ const handleGetUsers = async (req, res, next) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
 
-    const {users,pagination} = await findUsers(search, limit, page);
+    const {users,pagination} = await findUser(search, limit, page);
     const count = users.length;
 
     return successResponse(res, {
@@ -260,8 +262,98 @@ const handleGetUsers = async (req, res, next) => {
   }
 };
 
+const handleGetUserById = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const options = { password: 0 };
+    const user = await findUserById(id, options);
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'user was returned successfully',
+      payload: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const handledeleteUserById = async (req,res,next) => {
+    try{
+        const id = req.params.id;
+        const options = { password: 0};
+        await deleteUserById(id, options);
+
+       return successResponse(res,{
+        statusCode: 200,
+        message: 'user was deleted successfully',
+       });
+    }catch (error){
+        next(error);
+    }
+}
+
+const handleUpdateUserById = async (req,res,next) => {
+   try {
+    const userId = req.params.id;
+    const updatedUser = await updateUserById(userId, req);
+    return successResponse(res,{
+        statusCode: 200,
+        message: 'User was updated sucessfully',
+        payload: updatedUser,
+    })
+  } catch (error) {
+    throw error;
+  }
+};
+
+const handleUpdatePassword = async (req,res,next) => {
+  try{
+    const{oldPassword,newPassword}= req.body;
+    const userId = req.params.id;
+    const user = await findwithId(User,userId);
+
+    // compare the password
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if(!isPasswordMatch){
+      throw createError(400, ' old passsword d is not correct');
+    }
+    //const filter = {userId};
+    //const updates = {$set: {password: newPassword}}
+    //const updateOptions = {new:true}
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { password: newPassword },
+        {new:true}
+    ).select('-password');
+
+    if(!updatedUser){
+        throw createError(400,'User was not updated successfully');
+    }
 
 
+    return successResponse(res,{
+        statusCode: 200,
+        message: 'user was updated successfully',
+        payload: {updatedUser},
+    });
+  }catch(error){
+    next(error);
+  }
+};
 
 
-module.exports = { getUsers, getUserById, deleteUserById,processRegister, activateUserAccount,updateUserById,handleManageUserStatusUserById,handleGetUsers};
+module.exports = { 
+    getUsers, 
+    getUserById, 
+    deleteUserById,
+    processRegister, 
+    activateUserAccount,
+    updateUserById,
+    handleManageUserStatusUserById,
+    handleGetUsers,
+    handleGetUserById,
+    handledeleteUserById,
+    handleUpdateUserById,
+    handleUpdatePassword
+};
