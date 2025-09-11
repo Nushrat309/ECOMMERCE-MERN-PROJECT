@@ -11,8 +11,10 @@ const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret'
 const emailWithNodeMailer = require('../helper/email');
 const { runValidation } = require('../validators');
 const { options } = require('../routers/userRouter');
-const { handleUserAction, updateUserPasswordById, forgetPasswordByEmail } = require('../services/userService');
+const { handleUserAction, updateUserPasswordById, forgetPasswordByEmail, resetPassword } = require('../services/userService');
 const { isAdmin } = require('../middlewares/auth');
+const checkUserExists = require('../helper/checkUserExist');
+const sendemail = require('../helper/sendEmail');
 
 
 const getUsers = async(req, res, next) => {
@@ -111,7 +113,7 @@ const processRegister = async (req,res,next) =>{
 
         const imageBufferString = image.buffer.toString('base64');
 
-        const userExists = await User.exists({email:email});
+        const userExists = await checkUserExists(email);
         if(userExists){
             throw createError(409,'User with this email already exist.Please sign in');
         }
@@ -134,12 +136,10 @@ const processRegister = async (req,res,next) =>{
         html:`
         <h2> Hellow ${name} ! </h2>
         <p> Please click here to <a href="${clientURL}/api/users/activate/${token}" target="_blank"> activate your account </a> </p>
-        `
+        `,
     };
-
-    // send email with nodemailer
-     sendemail(emailData);
-
+    sendemail(emailData);
+    
     return successResponse(res,{
         statusCode:200,
         message: `Please go to your ${email} for completing your registration process`,
@@ -241,25 +241,39 @@ const handleManageUserStatusUserById = async(req, res, next) => {
 };
 
 const handleGetUsers = async (req, res, next) => {
-  try {
-    const search = req.query.search || ''; 
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 5;
+  try{
+       const searchRegExp = new RegExp('.*' + search + '*.','i');
+    const filter = {
+        isAdmin: { $ne: true },
+        $or: [
+            { name: {$regex: searchRegExp }},
+            { email: {$regex: searchRegExp }},
+            { phone: {$regex: searchRegExp }},
 
-    const {users,pagination} = await findUser(search, limit, page);
-    const count = users.length;
+        ],
+    };
+    const options = { password: 0};
 
-    return successResponse(res, {
-      statusCode: 200,
-      message: 'users were returned successfully',
-      payload: {
-        users: users,
-        pagination: pagination,
-      },
-    });
-  } catch (error) {
-    next(error); 
-  }
+    const users = await User.find(filter,options)
+      .limit(limit)
+      .skip((page-1)* limit);
+
+    const count = await User.find(filter).countDocument();
+
+    if(!users || users.length == 0) throw createHttpError(404,'No users found');
+
+    return{
+        users,
+        pagination: {
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        previousPage: page - 1 > 0 ? page - 1 : null,
+        nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
+        }
+    }
+    } catch (error){
+       throw error;
+    }
 };
 
 const handleGetUserById = async (req, res, next) => {
@@ -343,25 +357,7 @@ const handleForgetPassword = async (req,res,next) => {
 const handleResetPassword = async (req, res, next) => {
   try {
     const { token, password } = req.body;
-    const decoded = jwt.verify(token, jwtResetPasswordKey);
-
-    if (!decoded) {
-      throw createError(400, 'Invalid or expired token');
-    }
-
-    const filter = { email: decoded.email };
-    const update = { password: password }; // 🔒 should hash before saving!
-    const options = { new: true };
-
-    const updatedUser = await User.findOneAndUpdate(
-      filter,
-      update,
-      options
-    ).select('-password');
-
-    if (!updatedUser) {
-      throw createError(400, 'password reset fail');
-    }
+   await resetPassword(token,password);
 
     return successResponse(res, {
       statusCode: 200,

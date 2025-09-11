@@ -1,6 +1,7 @@
 const createError = require("http-error");
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const { isAdmin } = require("../middlewares/auth");
 const { successResponse } = require("../controllers/responseController");
@@ -8,6 +9,7 @@ const { handleGetUsers } = require("../controllers/userController");
 const { options } = require("../routers/userRouter");
 const { deleteImage } = require("../helper/deleteImagee");
 const {createJSONWebToken} = require('../helper/jsonwebtoken');
+const { jwtResetPasswordKey } = require('../secret');
 
 
 const findUsers = async (search,limit,page) =>{
@@ -195,6 +197,34 @@ const forgetPasswordByEmail = async (email) => {
     }
 };
 
+const resetPassword = async (token, password) => {
+  try {
+    const decoded = jwt.verify(token, jwtResetPasswordKey);
+
+    if (!decoded) {
+      throw createError(400, 'Invalid or expired token');
+    }
+
+    const filter = { email: decoded.email };
+    const update = { password: password };
+    const options = { new: true };
+
+    const updatedUser = await User.findOneAndUpdate(
+      filter,
+      update,
+      options
+    ).select('-password');
+
+    if (!updatedUser) {
+      throw createError(400, 'Password reset failed');
+    }
+
+    return updatedUser;
+  } catch (error) {
+    throw error;
+  }
+};
+
 
 const handleUserAction = async (userId, action) => {
     try{
@@ -234,5 +264,7 @@ module.exports = {
     updateUserById,
     updateUserPasswordById, 
     forgetPasswordByEmail,
+    resetPassword,
     handleUserAction };
 
+ 

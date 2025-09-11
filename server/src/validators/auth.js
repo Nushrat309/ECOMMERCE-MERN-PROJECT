@@ -117,16 +117,13 @@ const validateUserResetPassword = [
 ];
 
 
+
 //sign in validation
-
-
-
-
 
 module.exports = { 
   validateUserRegistration, 
   validateUserLogin,
   validateUserPasswordUpdate,
   validateUserForgetPassword,
-  validateUserResetPassword
+  validateUserResetPassword,
  };
