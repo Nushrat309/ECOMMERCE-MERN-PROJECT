@@ -8,6 +8,8 @@ const jwtActivationKey = process.env.JWT_ACTIVATION_KEY || 'ahahahahagigag_25383
 
 const jwtAccessKey = process.env.JWT_ACCESS_KEY || 'ahahahahagigag_253836';
 
+const jwtResetPasswordKey = process.env.JWT_RESET_PASSWORD_KEY || 'ahahahahagigag_253836';
+
 const smtpUsername = process.env.SMTP_USERNAME || '';
 
 const smtpPassword = process.env.SMTP_PASSWORD || '';
@@ -15,4 +17,14 @@ const smtpPassword = process.env.SMTP_PASSWORD || '';
 const clientURL = process.env.CLIENT_URL || '';
 
 
-module.exports = { serverPort, mongodbURL, defaultImagePath, jwtActivationKey, smtpUsername, smtpPassword, clientURL,jwtAccessKey};
+module.exports = { 
+    serverPort,
+    mongodbURL, 
+    defaultImagePath, 
+    jwtActivationKey, 
+    smtpUsername, 
+    smtpPassword, 
+    clientURL,
+    jwtAccessKey,
+    jwtResetPasswordKey
+};

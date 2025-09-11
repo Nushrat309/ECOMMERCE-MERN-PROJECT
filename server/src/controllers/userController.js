@@ -7,11 +7,11 @@ const { findwithId } = require("../services/finditem");
 const { successResponse } = require("./responseController");
 const { deleteImage } = require('../helper/deleteImagee');
 const { createJSONWebToken } = require('../helper/jsonwebtoken');
-const { jwtActivationKey, clientURL } = require('../secret');
+const { jwtActivationKey, clientURL, jwtResetPasswordKey } = require('../secret');
 const emailWithNodeMailer = require('../helper/email');
 const { runValidation } = require('../validators');
 const { options } = require('../routers/userRouter');
-const { handleUserAction } = require('../services/userService');
+const { handleUserAction, updateUserPasswordById, forgetPasswordByEmail } = require('../services/userService');
 const { isAdmin } = require('../middlewares/auth');
 
 
@@ -138,7 +138,7 @@ const processRegister = async (req,res,next) =>{
     };
 
     // send email with nodemailer
-    sendEmail(emailData);
+     sendemail(emailData);
 
     return successResponse(res,{
         statusCode:200,
@@ -309,38 +309,69 @@ const handleUpdateUserById = async (req,res,next) => {
 
 const handleUpdatePassword = async (req,res,next) => {
   try{
-    const{oldPassword,newPassword}= req.body;
+    const {email,oldPassword,newPassword,c}= req.body;
     const userId = req.params.id;
-    const user = await findwithId(User,userId);
 
-    // compare the password
-    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
-    if(!isPasswordMatch){
-      throw createError(400, ' old passsword d is not correct');
+    const updatedUser = await updateUserPasswordById(userId,email,oldPassword,newPassword,confirmedPassword);
+
+   return successResponse(res,{
+     statusCode:200,
+     message: 'user was updated sucessfully',
+     payload: { updatedUser},
+   });
+       
+    } catch (error) {
+        throw(error);
     }
-    //const filter = {userId};
-    //const updates = {$set: {password: newPassword}}
-    //const updateOptions = {new:true}
-    const updatedUser = await User.findByIdAndUpdate(
-        userId,
-        { password: newPassword },
-        {new:true}
-    ).select('-password');
+};
 
-    if(!updatedUser){
-        throw createError(400,'User was not updated successfully');
-    }
-
-
+const handleForgetPassword = async (req,res,next) => {
+  try{
+    const { email } = req.body;
+    
+    const token = await forgetPasswordByEmail(email);
     return successResponse(res,{
-        statusCode: 200,
-        message: 'user was updated successfully',
-        payload: {updatedUser},
-    });
-  }catch(error){
+        statusCode:200,
+        message: `Please go to your ${email} for reseting the password`,
+        payload: token,
+        });
+    }catch(error){
     next(error);
   }
 };
+
+const handleResetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    const decoded = jwt.verify(token, jwtResetPasswordKey);
+
+    if (!decoded) {
+      throw createError(400, 'Invalid or expired token');
+    }
+
+    const filter = { email: decoded.email };
+    const update = { password: password }; // 🔒 should hash before saving!
+    const options = { new: true };
+
+    const updatedUser = await User.findOneAndUpdate(
+      filter,
+      update,
+      options
+    ).select('-password');
+
+    if (!updatedUser) {
+      throw createError(400, 'password reset fail');
+    }
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: 'Password reset successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 module.exports = { 
@@ -355,5 +386,7 @@ module.exports = {
     handleGetUserById,
     handledeleteUserById,
     handleUpdateUserById,
-    handleUpdatePassword
+    handleUpdatePassword,
+    handleForgetPassword,
+    handleResetPassword
 };

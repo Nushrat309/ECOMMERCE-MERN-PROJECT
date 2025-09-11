@@ -1,11 +1,13 @@
 const createError = require("http-error");
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const { isAdmin } = require("../middlewares/auth");
 const { successResponse } = require("../controllers/responseController");
 const { handleGetUsers } = require("../controllers/userController");
 const { options } = require("../routers/userRouter");
 const { deleteImage } = require("../helper/deleteImagee");
+const {createJSONWebToken} = require('../helper/jsonwebtoken');
 
 
 const findUsers = async (search,limit,page) =>{
@@ -120,6 +122,80 @@ const updateUserById = async (userId, req) => {
 };
 
 
+const updateUserPasswordById = async (userId, email, oldPassword, newPassword, confirmedPassword) => {
+  try { 
+        
+        const user = await User.findOne({email: email});
+
+        if(!user){
+            throw createError(404, 'user is not found with this email');
+        }
+
+        if(newPassword != confirmedPassword){
+            throw createError(
+                400,'New password and confirmed password did not match'
+            );
+        }
+
+    // compare the password
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if(!isPasswordMatch){
+      throw createError(400, ' old passsword d is not correct');
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { password: newPassword },
+        {new:true}
+    ).select('-password');
+
+    if(!updatedUser){
+        throw createError(400,'User was not updated successfully');
+    }
+    return updatedUser;
+       
+    } catch (error) {
+        if(error instanceof mongoose.Error.CastError){
+            throw createError(400,'Invalid Id');
+        }
+        throw(error);
+    }
+};
+
+const forgetPasswordByEmail = async (email) => {
+  try { 
+    const userData = await user.findOne({email: email});
+    if(!userData){
+        throw createError(404,'Email is incorrect or you have not verify your email address.Please register yourself first');
+    }
+
+    const token = createJSONWebToken(
+        { email },
+        jwtActivationKey,
+        '10m'
+    );
+
+    //prepare email
+    const emailData = {
+        email,
+        subject: 'Reset password Email',
+        html:`
+        <h2> Hellow ${userData.name} ! </h2>
+        <p> Please click here to <a href="${clientURL}/api/users/reset-password/${token}" target="_blank"> reset your password </a> </p>
+        `
+    };
+
+    // send email with nodemailer
+    sendemail(emailData);
+
+    return token;
+  
+    } catch (error) {
+        throw(error);
+    }
+};
+
+
 const handleUserAction = async (userId, action) => {
     try{
       let update;
@@ -151,4 +227,12 @@ const updatedUser = await User.findByIdAndUpdate(userId, update, updateOptions).
     }
 };
 
-module.exports = {findUsers, findUserById, deleteUserById, updateUserById, handleUserAction };
+module.exports = {
+    findUsers, 
+    findUserById, 
+    deleteUserById, 
+    updateUserById,
+    updateUserPasswordById, 
+    forgetPasswordByEmail,
+    handleUserAction };
+
