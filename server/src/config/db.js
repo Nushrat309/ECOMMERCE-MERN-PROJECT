@@ -10,10 +10,10 @@ const connectDatabase = async () => {
         console.log('Connection to DB is successfully established');
 
         mongoose.connection.on('error', (error) => {
-            console.error('DB connection error: ', error);
+            logger.log('error','DB connection error: ', error);
         });
     } catch (error) {
-        console.error('Could not connect to DB: ', error.toString());
+        logger.log('error','Could not connect to DB: ', error.toString());
     }
 };
 
