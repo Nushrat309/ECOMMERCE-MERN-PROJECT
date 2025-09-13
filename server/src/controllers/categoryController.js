@@ -1,8 +1,9 @@
 const slugify = require('slugify');
+const createError = require('http-errors');
 
 const { successResponse } = require("./responseController");
-const category = require("../models/categoryModel");
-const { createCategory, getCategories } = require('../services/categoryService');
+const Category = require("../models/categoryModel");
+const { createCategory, getCategories, updateCategory } = require('../services/categoryService');
 
 const handleCreateCategory = async (req,res,next) =>{
     try{
@@ -11,7 +12,7 @@ const handleCreateCategory = async (req,res,next) =>{
         await createCategory(name);
         
         return successResponse(res,{
-         statusCode:200,
+         statusCode:201,
          message: 'Category was created successfully',
          });
        }catch (error){
@@ -35,15 +36,65 @@ const handleCreateCategories = async (req,res,next) =>{
 const handleGetCategory = async (req,res,next) =>{
     try{
         const {slug} = req.params;
-        const categories = await getCategory(slug);
+        const category = await getCategory(slug);
+
+        if(!category){
+            throw createError(404, 'No category found with thus slug');
+        }
+
         return successResponse(res,{
          statusCode:200,
          message: 'Categories fetched successfully',
-         payload: categories,
+         payload: category,
          });
        }catch (error){
         next(error);
     }
 };
 
-module.exports = { handleCreateCategory, handleCreateCategories,handleGetCategory };
+const handleUpdateCategory = async (req,res,next) =>{
+    try{
+        const {name} = req.body;
+        const {slug} = req.params;
+
+        const updatedCategory = await updateCategory(name, slug);
+        if(!updatedCategory){
+            throw createError(404, 'No category found with this slug');
+        }
+        
+        return successResponse(res,{
+         statusCode:200,
+         message: 'Category updated successfully',
+         payload: updatedCategory,
+         });
+       }catch (error){
+        next(error);
+    }
+};
+
+const handleDeleteCategory = async (req,res,next) =>{
+    try{
+        const {slug} = req.params;
+
+        const result = await deleteCategory(slug);
+        if(!result){
+            throw createError(404, 'No category found');
+        }
+        
+        return successResponse(res,{
+         statusCode:200,
+         message: 'Category deleted successfully',
+         payload: updatedCategory,
+         });
+       }catch (error){
+        next(error);
+    }
+};
+
+module.exports = { 
+    handleCreateCategory,
+    handleCreateCategories,
+    handleGetCategory,
+    handleUpdateCategory,
+    handleDeleteCategory
+ };

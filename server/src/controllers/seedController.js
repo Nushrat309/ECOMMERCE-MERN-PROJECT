@@ -16,4 +16,19 @@ const seedUser = async(req, res, next) => {
     }
 };
 
-module.exports = { seedUser };
+const seedProducts = async(req, res, next) => {
+    try {
+        // Deleting all existing users
+        await Product.deleteMany({});
+
+        // Inserting new users
+        const products = await Product.insertMany(data.products);
+
+        // Successfully responding
+        return res.status(201).json(products);
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { seedUser, seedProducts };

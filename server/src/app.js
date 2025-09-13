@@ -10,6 +10,7 @@ const seedRouter = require('./routers/seedRouter');
 const { errorResponse, successResponse } = require('./controllers/responseController');
 const authRouter = require('./routers/authRouter');
 const categoryRouter = require('./routers/authRouter');
+const productRouter = require('./routers/authRouter');
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/users', userRouter);
 app.use('/api/seed', seedRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/categories',categoryRouter);
+app.use('/api/products',productRouter);
 
 
 app.get('/test', (req, res) => {

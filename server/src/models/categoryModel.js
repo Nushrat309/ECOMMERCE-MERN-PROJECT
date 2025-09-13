@@ -1,5 +1,5 @@
 const { Schema, model } = require('mongoose');
-const bcrypt = require('bcryptjs'); // fixed typo: 'bycrypt' ➝ 'bcrypt'
+const bcrypt = require('bcryptjs'); 
 
 const { defaultImagePath } = require("../secret");
 
@@ -22,5 +22,5 @@ const categorySchema = new Schema({
     { timestamps: true }
 );
 
-const category = model('category', categorySchema);
-module.exports = category;
+const Category = model('category', categorySchema);
+module.exports = Category;

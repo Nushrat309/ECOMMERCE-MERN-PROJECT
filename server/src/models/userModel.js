@@ -1,5 +1,5 @@
 const { Schema, model } = require('mongoose');
-const bcrypt = require('bcryptjs'); // fixed typo: 'bycrypt' ➝ 'bcrypt'
+const bcrypt = require('bcryptjs'); 
 
 const { defaultImagePath } = require("../secret");
 
@@ -16,7 +16,7 @@ const userSchema = new Schema({
             type: String,
             required: [true, 'User email is required'],
             trim: true,
-            unique: true, // fixed typo: 'uniqe' ➝ 'unique'
+            unique: true,
             lowercase: true,
             validate: {
                 validator: function(v) {
@@ -30,13 +30,13 @@ const userSchema = new Schema({
             type: String,
             required: [true, 'User password is required'],
             minlength: [6, 'Password must be at least 6 characters long'],
-            set: (v) => bcrypt.hashSync(v, bcrypt.genSaltSync(10)), // fixed function wrapping
+            set: (v) => bcrypt.hashSync(v, bcrypt.genSaltSync(10)),
         },
 
         image: {
             type:Buffer,
-            type: String,
-            default: defaultImagePath,
+            contenType: String,
+            required: [true, 'User image is required'],
         },
 
         address: {
@@ -51,7 +51,7 @@ const userSchema = new Schema({
         },
 
         isAdmin: {
-            type: Boolean, // fixed: was "type Boolean"
+            type: Boolean, 
             default: false,
         },
 
@@ -59,9 +59,8 @@ const userSchema = new Schema({
             type: Boolean,
             default: false,
         },
-    }, { timestamps: true } // moved to second parameter, not inside schema fields
+    }, { timestamps: true }
 );
 
-// Model creation
-const User = model('User', userSchema); // 'User' instead of 'Users' is conventional
+const User = model('User', userSchema);
 module.exports = User;
