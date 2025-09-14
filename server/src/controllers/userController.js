@@ -105,7 +105,7 @@ const processRegister = async (req,res,next) =>{
     try{
         const {name,email,password,phone,address} = req.body;
         
-        const image = req.file;
+        const image = req.file?.path;
         if(image && image.size > 1024 * 1024 * 2){
             throw createError(400, 'File too large.It must be less than 2 MB');
         }

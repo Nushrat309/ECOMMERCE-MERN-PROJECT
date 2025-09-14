@@ -34,6 +34,8 @@ const validateProduct = [
     .isFloat({ min: 0})
     .withMessage('Quantity name should be a positive number'),
 
+  body('image').optional().isString().withMessage('Product image is optional'),
+
 ];
 
 module.exports = { 

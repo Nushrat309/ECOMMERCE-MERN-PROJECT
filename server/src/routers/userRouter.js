@@ -1,7 +1,7 @@
 const express = require('express');
 
 const { getUsers, getUserById, deleteUserById, processRegister, activateUserAccount, updateUserById } = require('../controllers/userController')
-const uploadUserImage = require('../middlewares/uploadFile');
+const {uploadUserImage} = require('../middlewares/uploadFile');
 const {validateUserRegistration, validateUserPasswordUpdate,validateUserForgetPassword,validateUserResetPassword} = require('../validators/auth');
 const { runValidation } =require('../validators/index');
 const { isLoggedIn, isLoggedOut, isAdmin } = require('../middlewares/auth');

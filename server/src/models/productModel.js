@@ -1,4 +1,5 @@
 const { Schema, model } = require('mongoose');
+const { defaultImagePath } = require('../secret');
 
 const productSchema = new Schema({
         name: {
@@ -64,7 +65,7 @@ const productSchema = new Schema({
         image: {
             type:Buffer,
             contenType: String,
-            required: [true, 'UProduct image is required'],
+            default: defaultImagePath,
         },
 
         category:{
