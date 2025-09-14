@@ -15,6 +15,7 @@ const { handleUserAction, updateUserPasswordById, forgetPasswordByEmail, resetPa
 const { isAdmin } = require('../middlewares/auth');
 const checkUserExists = require('../helper/checkUserExist');
 const sendemail = require('../helper/sendEmail');
+const cloudinary = require('../config/cloudinary');
 
 
 const getUsers = async(req, res, next) => {
@@ -161,6 +162,15 @@ const activateUserAccount = async (req,res,next) =>{
         const userExists = await User.exists({email:decode.email});
         if(userExists){
             throw createError(409,'User with this email already exist.Please sign in');
+        }
+
+        const image = decode.image;
+        if(image){
+            const response = await cloudinary.uploader.upload(image,{
+                folder: 'ecommerceMern',
+            });
+
+            decode.image = response.secure_url;
         }
 
         await User.create(decode);

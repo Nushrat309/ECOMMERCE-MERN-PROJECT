@@ -14,7 +14,7 @@ const { jwtResetPasswordKey } = require('../secret');
 
 const findUsers = async (search,limit,page) =>{
     try{
-       const searchRegExp = new RegExp('.*' + search + '*.','i');
+    const searchRegExp = new RegExp('.*' + search + '*.','i');
     const filter = {
         isAdmin: { $ne: true },
         $or: [
