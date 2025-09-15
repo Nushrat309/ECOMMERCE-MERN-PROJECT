@@ -1,8 +1,10 @@
 const slugify = require('slugify');
 const createError = require('http-errors');
-const { options } = require('../routers/categoryRouter');
-const Product = require('../models/productModel');
 const createHttpError = require('http-errors');
+
+const Product = require('../models/productModel');
+const { publicIdWithoutExtensinFromUrl, deleteFileFromCloudinary } = require('../helper/cloudinaryHelper');
+const cloudinary = require('../config/cloudinary');
 
 const createProduct = async (productData) => {
         
@@ -11,7 +13,10 @@ const createProduct = async (productData) => {
         }
 
     if(image) {
-        productData.image = image;
+        const response = await cloudinary.uploader.upload(image,{
+            folder: 'ecommerceMern/products',
+        });
+        decode.image = response.secre_url;
     }
 
     const productExists = await Product.exists({name:productData.name});
@@ -47,15 +52,21 @@ const getProductBySlug = async ( slug ) => {
 };
 
 const deleteProductBySlug = async ( slug ) => {
-     
-    const product = await Product.findOneAndDelete({slug});
+    try{
+     const existingProduct = await Product.findOneAndDelete({slug});
 
-     if(!product) throw createError(404, 'No product found');
-      if(product.image) {
-        await deleteImage(product.image);
+     if(!existingProduct) throw createError(404, 'No product found with this slug');
+
+      if(existingProduct.image) {
+        await publicIdWithoutExtensinFromUrl(existingProduct.image);
+       deleteFileFromCloudinary('ecommerceMern/product',publicIdWithoutExtensinFromUrl,'Product');
       }
 
-     return product;
+     await Product.findOneAndDelete({ slug });
+
+    }catch (error){
+        throw error;
+    }
 };
 
 const updateProductBySlug = async ( slug, req ) => {
@@ -93,6 +104,14 @@ const updateProductBySlug = async ( slug, req ) => {
 
         if(!updatedProduct){
             throw createError(404,'Updating product was not possible');
+        }
+        if (product.image) {
+            const publicId = await publicIdWithoutExtensinFromUrl(product.image);
+            await deleteFileFromCloudinary(
+                'ecommerceMern/products',
+                publicId,
+                'Product'
+            );
         }
         return updatedProduct;
   } catch (error){

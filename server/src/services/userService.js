@@ -3,11 +3,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const { isAdmin } = require("../middlewares/auth");
-const { successResponse } = require("../controllers/responseController");
-const { handleGetUsers } = require("../controllers/userController");
-const { options } = require("../routers/userRouter");
-const { deleteImage } = require("../helper/deleteImagee");
 const {createJSONWebToken} = require('../helper/jsonwebtoken');
 const { jwtResetPasswordKey } = require('../secret');
 
@@ -62,16 +57,23 @@ const findUserById = async (Id, options = {}) => {
 };
 
 
-const deleteUserById = async (Id, options = {}) => {
+const deleteUserById = async (id, options = {}) => {
   try {
-    const user = await User.findOneAndDelete({
-      _id: Id,
-      isAdmin: false,
+    const existingUser = await User.findOne({
+      _id: id,
     });
 
-    if (user && user.image) {
-      await deleteImage(user.image);
+    if (existingUser && existingUser.image) {
+      const publicId = await publicIdWithoutExtensinFromUrl(
+        existingUser.image
+      );
+      await deleteFileFromCloudinary('ecommerceMern/users', publicId, 'User');
     }
+
+    await User.findByIdAndDelete({
+      _id: id,
+      isAdmin: false,
+    });
   } catch (error) {
     if (error instanceof mongoose.Error.CastError) {
       throw createError(400, 'Invalid Id');
@@ -81,10 +83,16 @@ const deleteUserById = async (Id, options = {}) => {
 };
 
 
+
+
 const updateUserById = async (userId, req) => {
   try { 
         const options = { password: 0};
         const user = await findUserById(userId,options);
+
+        if(!user) {
+          throw createError(404, 'User not found');
+        }
 
         const updateOptions = { new: true,runValidators: true,context: 'query'};
         let updates = {};
@@ -102,10 +110,13 @@ const updateUserById = async (userId, req) => {
             if(image.size > 1024 * 1024 * 2){
                 throw new Error('File too large.It must be less than 2 MB');
             }
-            updates.image = image;
-            user.image != 'default.jpeg' && deleteImage(user.image);
+            const response = await cloudinary_js_config.uploader.upload
+            (image,{
+              folder: 'ecommerceMern/users',
+            });
+            updates.image = response.secure_url;
         }
-        const updatedUser = await User.findByIdAndUpdate(
+        const updatedUser = await user.findByIdAndUpdate(
             userId,
             updates,
             updateOptions
@@ -113,6 +124,15 @@ const updateUserById = async (userId, req) => {
 
         if(!updatedUser){
             throw createError(404,'User with this ID does not exist');
+        }
+
+        if (user.image) {
+            const publicId = await publicIdWithoutExtensinFromUrl(users.image);
+            await deleteFileFromCloudinary(
+                'ecommerceMern/users',
+                publicId,
+                'User'
+            );
         }
         return updatedUser;
     } catch (error) {
