@@ -1,10 +1,12 @@
 import React from 'react';
+import PageTitle from '../assets/components/PageTitle';
 
 const Error = () => {
     return (
         <div>
-            <h1>404 not found</h1>
-        </div>
+        <PageTitle title="Home" />
+        <h1>404 Not Found</h1>
+    </div>
     );
 };
 
