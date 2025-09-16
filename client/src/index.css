@@ -86,6 +86,17 @@ main {
     min-height: 80vh;
 }
 
+/*sidebar*/
+.container{}
+.sidebar-container{
+    padding: var(--padding);
+    flex: 1;
+}
+.main-container{
+    padding: var(--padding);
+    flex: 3;
+}
+
 /*footer starts here */
 .footer {
   padding: 1rem;
